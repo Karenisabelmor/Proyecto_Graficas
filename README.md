@@ -7,6 +7,13 @@
 
 
 ## Propuestas 
+### Puzzle 3D
+Juego similar a “Captain Toad” donde tendremos a nuestro personaje principal en busca de una llave dorada que le dará acceso a la salida del nivel. Será un mundo totalmente 3D donde el jugador podrá cambiar la perspectiva del juego usando Shift, de esta manera el jugador podrá tener diferentes vistas que serán necesarias si quiere completar el nivel exitosamente. Además, el jugador podrá moverse con las teclas W, A, S, D y saltar con la tecla de espacio. Se tendrá enemigos y/o obstáculos en el recorrido que harán más difícil el nivel. Para esta idea es crucial el uso de los assets.
+
+<p align="center">
+  <img width="400" height="300" src="https://i.blogs.es/faf0f1/captain/840_560.jpg">
+</p>
+
 ### Historia interactiva/Recorrido interactivo
 Historia corta donde el jugador puede decidir el rumbo que va a tomar la historia mediante clicks en las opciones que aparecerán en la pantalla, con esto la historia se ramificará y los escenarios van a cambiar según la elección. Es un mundo 3D y el jugador va a poderlo recorrer mientras le aparece el texto y las opciones, no habrá personajes. La historia tendrá un solo final. Por el momento se tiene pensado que cuente "La casa de Asterión". [Inspirado en el test del Patronus de Wizarding World.](https://www.youtube.com/watch?v=4jTMGnALzwM)
 
