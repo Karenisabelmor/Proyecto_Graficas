@@ -44,7 +44,7 @@ Por el momento el plan de trabajo que se tiene para la primera entrega es tener 
 * Ana: búsqueda de assets, diseño del fondo, incorporación de assets, animaciones
 * Karen: escena de inicio y pausa, incorporación de los assets, animaciones
 * Emilio: mecánicas del juego, incorporación de assets, animaciones
-* 
+
 Para agilizar el trabajo, si vemos que alguna área va más lento, será necesario que todos trabajemos en eso para acabar todo a tiempo. 
 
 A continuación se tiene un boceto de lo que serían las pantallas de inicio y un nivel del juego. 
