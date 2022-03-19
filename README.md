@@ -47,6 +47,16 @@ Por el momento el plan de trabajo que se tiene para la primera entrega es tener 
 
 Para agilizar el trabajo, si vemos que alguna área va más lento, será necesario que todos trabajemos en eso para acabar todo a tiempo. 
 
+El proyecto va a seguir la siguiente estructura de carpetas:
+```
+- / 			        # Raíz de todo el proyecto
+    - README.md			# Archivo con los datos del proyecto (este archivo)
+    - source			# Carpeta con el código fuente de la solución
+    - models			# Carpeta con los assets a utilizar
+    - textures			# Carpeta con las texturas a utilizar
+```
+
+
 A continuación se tiene un boceto de lo que serían las pantallas de inicio y un nivel del juego. 
 
 ![img](https://cdn.discordapp.com/attachments/853383945805758464/954559756561944586/unknown.png)
