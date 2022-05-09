@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" defer src="base_scene.js"></script>
+    <title>Tiny Wings</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sigmar+One&display=swap');
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            margin: 0px;
+            overflow: hidden; 
+        }
+
+        #score {
+            position: absolute;
+            color: white;
+            font-size: 3em;
+            font-weight: bold;
+            top: 30px;
+            right: 30px;
+            font-family:'Montserrat', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <canvas id="webglcanvas" width=1450 height=750></canvas>
+    </div>
+
+    <div id="score">0</div>
+</body>
+</html>
