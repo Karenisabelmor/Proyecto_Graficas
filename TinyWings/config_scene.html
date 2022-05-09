@@ -8,23 +8,21 @@
     <link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet' type='text/css'>
     <style>@import url('https://fonts.googleapis.com/css2?family=Sigmar+One&display=swap');</style>
     <title>Tiny Wings - Index</title>
-    <script>
-        function jumpToGame(){
-            window.location.href = "index.html";
-        }
-    </script>
+    <script src="config-scene.js" type="module"></script>
 </head>
 <body>
     <h1 style="font-size:10vw;">
         <span data-z data-z-event="pointer" data-z-depth="0.3em">SETUP</span>
     </h1>
-        <div class="box">
-            <p>Tiny Wings es un juego donde tendrás que ayudar a Cuchi el cerdito volador a recolectar manzanas en una colina mientras se enfrenta con distintos obstáculos.
-                Hecho por Karen Isabel Morgado, Emilio Popovits Blake y Ana Paola Minchaca García.
-            </p>
-        </div>
+        <form id="configuracion"> 
+            <label for="dificultad">Dificultad:</label>
+            <input class="nivel" type="number" id="dificultad" name="dificultad" placeholder="1-3" min="1" max="3"><br>
+            <label for="volumen">Volumen:</label>
+            <input type="range" id="volumen" name="volumen" min="0" max="10" step="1"><br>
+            <input class='submit' type="submit" value="Submit">
+        </form>
         <br>
-        <button onClick="jumpToGame()">TITLE SCREEN!</button>
+        <button id="backToMenu">TITLE SCREEN!</button>
     <script src="ztext.min.js"></script>
 </body>
 </html>

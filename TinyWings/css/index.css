@@ -80,3 +80,18 @@ p {
         flex-wrap: wrap;
     }
 }
+
+.nivel{
+    width: 7.3rem;
+    text-align: center;
+}
+
+label{
+    margin-right: 2rem;
+}
+
+.submit{
+    margin-top: 10px;
+    margin-left: 90px;
+    font-family:'Montserrat', sans-serif;
+}

@@ -14,12 +14,25 @@ let objModelUrl = {obj:'./models/apple/Apple.obj', map:'./models/apple/Apple_Bas
 
 const scoreElement = document.getElementById("score");
 
+function getConfig() {
+    if(JSON.parse(window.localStorage.getItem('configuracion')) === null){
+        return({
+            dificultad:2,
+            volumen: 5
+        })
+    } else {
+        return JSON.parse(window.localStorage.getItem('configuracion'));
+    }
+}
+
 function main()
 {
     const canvas = document.getElementById("webglcanvas");
 
     createScene(canvas);
 
+    const configuracion = getConfig()
+    
     update();
 }
 
