@@ -14,7 +14,7 @@
      Mesh, TextureLoader, RepeatWrapping, BackSide, 
      PlaneBufferGeometry, MeshStandardMaterial, MeshBasicMaterial, 
      SphereGeometry, Vector3, Texture
- } from '../libs/three.js/three.module.js';
+ } from '../../libs/three.js/three.module.js';
  // import * as THREE from '../libs/three.js/three.module.js';
  
  /**

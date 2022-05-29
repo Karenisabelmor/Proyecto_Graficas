@@ -4,12 +4,13 @@ import * as THREE from '../libs/three.js/three.module.js'
 import { OrbitControls } from '../libs/three.js/controls/OrbitControls.js';
 import { OBJLoader } from '../libs/three.js/loaders/OBJLoader.js';
 import { FBXLoader } from '../libs/three.js/loaders/FBXLoader.js';
+import TerrainGenerator from './modules/TerrainGenerator.js';
 
-// checar ejemplo 11_threejsInteraction
-
-let renderer = null, scene = null, camera = null, groupHill = new THREE.Object3D, objectList = [], orbitControls = null;
+let renderer = null, scene = null, camera = null, groupHill = new THREE.Object3D, objectList = [], orbitControls = null, raycaster = null;
 let directionalLight = null, hemisphereLight = null;
 let paused = false;
+let currentTime = Date.now();
+let objects = [];
 
 let objModelUrl = {obj:'./models/apple/Apple.obj', map:'./models/apple/Apple_BaseColor.png', normalMap:'./models/apple/Apple_Normal.png', specularMap: './models/apple/Apple_Roughtness.png'};
 
@@ -28,8 +29,13 @@ function getConfig() {
 
 function animate(){
 
+    const now = Date.now();
+    const deltat = now - currentTime;
+    currentTime = now;
+
     groupHill.position.x = groupHill.position.x + 0.1;
     groupHill.position.z = groupHill.position.z - 0.02;
+
 }
 
 function update() 
@@ -64,6 +70,7 @@ fbxLoader.load(
         cloud.position.x = -16;
         cloud.position.y = 6;
         scene.add(cloud);
+        cloud.name = "cloud";
         groupHill.add(cloud);
     },
     (xhr) => {
@@ -124,6 +131,7 @@ fbxLoader_Enemies.load(
         pigeon.rotation.y = 1.7;
         pigeon.position.y = 6;
         scene.add(pigeon);
+        pigeon.name = "pigeon";
         groupHill.add(pigeon);
     },
     (xhr) => {
@@ -231,8 +239,7 @@ async function loadObj(objModelUrl, objectList)
 }
 
 function onKeyDown ( event ) {
-    var cerdo = scene.getObjectByName('cerdito');
-    console.log(cerdo);
+    let cerdo = scene.getObjectByName('cerdito');
     switch ( event.keyCode ) {
         case 37: // left
         case 65: // a
@@ -256,6 +263,39 @@ function onKeyDown ( event ) {
             break;
     }
 };
+
+// function addClouds(){
+//     let nubecita = scene.getObjectByName('cloud');
+//     let nube_clon = nubecita.clone();
+//     nube_clon.position.set(Math.random() * -40 - 20, 10, -10);
+//     clouds.push(nube_clon)
+//     groupHill.add(nube_clon)
+//     console.log(nube_clon)
+// }
+
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// agregar multiples objetos a la escena 
+function addObjects(obj){
+    let object = scene.getObjectByName(obj);
+    let obj_clone = object.clone();
+    obj_clone.position.set(Math.random() * -40 - 20, 10, -10);
+    objects.push(obj_clone);
+    groupHill.add(obj_clone);
+}
+
+// function getTexturePath(name) {
+//     return `./images/${name}.jpeg`;
+// }
+
+setInterval(function (){
+    addObjects('cloud');
+    addObjects('pigeon');
+}, 5000);
 
 function createScene(canvas) 
 {
@@ -306,6 +346,16 @@ function createScene(canvas)
 
     // Group objects
     scene.add(groupHill)
+
+    // Call terrainGenerator
+    const islandTextures = ['./images/water_texture.jpg', './images/desert_texture.jpeg', './images/ice_texture.jpeg', './images/grass_texture.jpeg'];
+    //const randomTexture = islandTextures[Math.floor(Math.random()*islandTextures.length)];
+    const terrainGenerator = new TerrainGenerator(islandTextures);
+    const island0 = terrainGenerator.generateTerrain(1);
+    island0.position.set(-30, 0, -7);
+    island0.scale.set(0.060, 0.060, 0.060);
+    island0.rotation.z = 30;
+    scene.add(island0);
 }
 
 function resize()
