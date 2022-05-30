@@ -7,26 +7,26 @@
  * @author Emilio Popovits Blake
  */
 
- "use strict";
+"use strict";
 
- // Import ThreeJs
- import { 
-     Mesh, TextureLoader, RepeatWrapping, BackSide, 
-     PlaneBufferGeometry, MeshStandardMaterial, MeshBasicMaterial, 
-     SphereGeometry, Vector3, Texture
- } from '../../libs/three.js/three.module.js';
- // import * as THREE from '../libs/three.js/three.module.js';
- 
- /**
-  * Terrain Generator class, which accepts settings and can 
-  * generate wave-like terrains.
-  * @class
-  * @property {String[]} islandTextures - Array with paths to island textures.
-  * @property {Number} terrainWidth - Terrain width to be used by the generator.
-  * @property {Number} terrainLength - Terrain length to be used by the generator.
-  */
+// Import ThreeJs
+import { 
+    Mesh, TextureLoader, RepeatWrapping, BackSide, DoubleSide, 
+    PlaneBufferGeometry, MeshStandardMaterial, MeshBasicMaterial, 
+    SphereGeometry, Vector3, Texture
+} from '../../libs/three.js/three.module.js';
+// import * as THREE from '../libs/three.js/three.module.js';
+
+/**
+ * Terrain Generator class, which accepts settings and can 
+ * generate wave-like terrains.
+ * @class
+ * @property {String[]} islandTextures - Array with paths to island textures.
+ * @property {Number} terrainWidth - Terrain width to be used by the generator.
+ * @property {Number} terrainLength - Terrain length to be used by the generator.
+ */
 export default class TerrainGenerator {
-     
+    
     /**
      * Array with paths to island textures.
      * @type {String[]}
@@ -47,7 +47,7 @@ export default class TerrainGenerator {
     terrainLength = 2000;
 
     /**
-     * 
+     * Constructs a Terrain Generator.
      * @param {String[]} islandTextures - (Required) Array with paths to island textures (max 10).
      * @param {Number} [terrainWidth=500] - Terrain width to be used by the generator (default 500).
      * @param {Number} [terrainLength=2000] - Terrain length to be used by the generator (default 2000).
@@ -87,7 +87,7 @@ export default class TerrainGenerator {
         // Create plane
         const plane = new Mesh(
             new PlaneBufferGeometry(this.terrainWidth, this.terrainLength, 200, 200),
-            new MeshStandardMaterial({ map, side: BackSide })
+            new MeshStandardMaterial({ map, side: DoubleSide })
             // [DEBUG] Shows shorter plane as wireframe.
             // new PlaneBufferGeometry(500, 1000, 200, 200),
             // new MeshBasicMaterial({ color: 0xFFFFFF, wireframe: true })
@@ -174,7 +174,7 @@ export default class TerrainGenerator {
         // Create the ending of the island
         const endPlane = new Mesh(
             new PlaneBufferGeometry(this.terrainWidth, 1000, 200, 200),
-            new MeshStandardMaterial({ map, side: BackSide })
+            new MeshStandardMaterial({ map, side: DoubleSide })
             // [DEBUG] Show endPlane as a blue wireframe.
             // new MeshBasicMaterial({ color:0x0000FF, wireframe: true })
         );
@@ -209,5 +209,4 @@ export default class TerrainGenerator {
             return shapeTerm + roughnessTerm + slopeTerm;
         };
     };
-     
 };
