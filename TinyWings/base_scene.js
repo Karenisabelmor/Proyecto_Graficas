@@ -5,12 +5,15 @@ import { OrbitControls } from '../libs/three.js/controls/OrbitControls.js';
 import { OBJLoader } from '../libs/three.js/loaders/OBJLoader.js';
 import { FBXLoader } from '../libs/three.js/loaders/FBXLoader.js';
 import TerrainGenerator from './modules/TerrainGenerator.js';
+import PlayerControls from './modules/PlayerControls.js';
 
 let renderer = null, scene = null, camera = null, groupHill = new THREE.Object3D, objectList = [], orbitControls = null, raycaster = null;
 let directionalLight = null, hemisphereLight = null;
 let paused = false;
 let currentTime = Date.now();
 let objects = [];
+let terrainGenerator;
+let playerMovements;
 
 let objModelUrl = {obj:'./models/apple/Apple.obj', map:'./models/apple/Apple_BaseColor.png', normalMap:'./models/apple/Apple_Normal.png', specularMap: './models/apple/Apple_Roughtness.png'};
 
@@ -29,10 +32,6 @@ function getConfig() {
 
 function animate(){
 
-    const now = Date.now();
-    const deltat = now - currentTime;
-    currentTime = now;
-
     groupHill.position.x = groupHill.position.x + 0.1;
     groupHill.position.z = groupHill.position.z - 0.02;
 
@@ -40,22 +39,38 @@ function animate(){
 
 function update() 
 {
+    const now = Date.now();
+    const deltat = now - currentTime;
+    currentTime = now;
+    
     requestAnimationFrame(function() { update(); });
 
     renderer.render( scene, camera );
 
     orbitControls.update();
-    
+
+    if (playerMovements != null){
+        playerMovements.update(deltat);
+    }
+
     animate();
+
 }
 
 function main()
 {
+
     const canvas = document.getElementById("webglcanvas");
 
     createScene(canvas);
 
     const configuracion = getConfig()
+
+    setInterval(()=>terrainGenerator.generateClouds(), 5000);
+
+    setInterval(()=>terrainGenerator.generateEnemies(), 5000);
+
+    setInterval(()=>terrainGenerator.generatePowers(), 5000);
     
     update();
 }
@@ -126,10 +141,9 @@ fbxLoader_Enemies.load(
     './models/enemies/pigeon.fbx',
     (pigeon) => {
         pigeon.scale.set(0.0050, 0.0050, 0.0050)
-        pigeon.position.z = -7;
-        pigeon.position.x = -16;
-        pigeon.rotation.y = 1.7;
-        pigeon.position.y = 6;
+        // pigeon.position.z = -7;
+        // pigeon.position.x = -16;
+        // pigeon.position.y = 6;
         scene.add(pigeon);
         pigeon.name = "pigeon";
         groupHill.add(pigeon);
@@ -152,6 +166,7 @@ fbxLoader_Pup1.load(
         pw1.rotation.y = 2;
         pw1.position.y = 6;
         scene.add(pw1);
+        pw1.name = "pw1";
         groupHill.add(pw1);
     },
     (xhr) => {
@@ -172,6 +187,7 @@ fbxLoader_Pup2.load(
         pw2.rotation.y = 2;
         pw2.position.y = 6;
         scene.add(pw2);
+        pw2.name = "pw2";
         groupHill.add(pw2);
     },
     (xhr) => {
@@ -192,6 +208,7 @@ fbxLoader_Pup3.load(
         pw3.rotation.y = 2;
         pw3.position.y = 6;
         scene.add(pw3);
+        pw3.name = "pw3";
         groupHill.add(pw3);
     },
     (xhr) => {
@@ -264,38 +281,19 @@ function onKeyDown ( event ) {
     }
 };
 
-// function addClouds(){
-//     let nubecita = scene.getObjectByName('cloud');
-//     let nube_clon = nubecita.clone();
-//     nube_clon.position.set(Math.random() * -40 - 20, 10, -10);
-//     clouds.push(nube_clon)
-//     groupHill.add(nube_clon)
-//     console.log(nube_clon)
-// }
-
-function getRandomInt(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
 // agregar multiples objetos a la escena 
-function addObjects(obj){
-    let object = scene.getObjectByName(obj);
-    let obj_clone = object.clone();
-    obj_clone.position.set(Math.random() * -40 - 20, 10, -10);
-    objects.push(obj_clone);
-    groupHill.add(obj_clone);
-}
-
-// function getTexturePath(name) {
-//     return `./images/${name}.jpeg`;
+// function addObjects(obj){
+//     let object = scene.getObjectByName(obj);
+//     let obj_clone = object.clone();
+//     obj_clone.position.set(Math.random() * -40 - 20, 10, -10);
+//     objects.push(obj_clone);
+//     groupHill.add(obj_clone);
 // }
 
-setInterval(function (){
-    addObjects('cloud');
-    addObjects('pigeon');
-}, 5000);
+// setInterval(function (){
+//     addObjects('cloud');
+//     addObjects('pigeon');
+// }, 5000);
 
 function createScene(canvas) 
 {
@@ -337,7 +335,7 @@ function createScene(canvas)
     // Audio
     window.addEventListener("DOMContentLoaded", event => {
         const audio = document.querySelector("audio");
-        audio.volume = 0.2;
+        audio.volume = 0.05;
         audio.play();
     });
 
@@ -349,13 +347,26 @@ function createScene(canvas)
 
     // Call terrainGenerator
     const islandTextures = ['./images/water_texture.jpg', './images/desert_texture.jpeg', './images/ice_texture.jpeg', './images/grass_texture.jpeg'];
-    //const randomTexture = islandTextures[Math.floor(Math.random()*islandTextures.length)];
-    const terrainGenerator = new TerrainGenerator(islandTextures);
-    const island0 = terrainGenerator.generateTerrain(1);
-    island0.position.set(-30, 0, -7);
-    island0.scale.set(0.060, 0.060, 0.060);
-    island0.rotation.z = 30;
+
+    terrainGenerator = new TerrainGenerator(scene, islandTextures);
+    
+    const island0 = terrainGenerator.generateTerrain(8);
+    // island0.position.set(-30, 0, -7);
+    // island0.scale.set(0.060, 0.060, 0.060);
+    // island0.rotation.z = 30;
     scene.add(island0);
+
+    const sphere = new THREE.Mesh (
+        new THREE.SphereGeometry(500),
+        new THREE.MeshBasicMaterial({ color: 0xFF0000})
+    );
+
+    sphere.scale.set(0.05, 0.05, 0.05);
+
+    scene.add(sphere);
+
+    playerMovements = new PlayerControls(sphere, island0);
+    
 }
 
 function resize()

@@ -13,8 +13,9 @@
 import { 
     Mesh, TextureLoader, RepeatWrapping, BackSide, DoubleSide, 
     PlaneBufferGeometry, MeshStandardMaterial, MeshBasicMaterial, 
-    SphereGeometry, Vector3, Texture
+    SphereGeometry, Vector3, Texture, Scene,
 } from '../../libs/three.js/three.module.js';
+
 // import * as THREE from '../libs/three.js/three.module.js';
 
 /**
@@ -27,6 +28,8 @@ import {
  */
 export default class TerrainGenerator {
     
+    scene = new Scene();
+
     /**
      * Array with paths to island textures.
      * @type {String[]}
@@ -52,7 +55,7 @@ export default class TerrainGenerator {
      * @param {Number} [terrainWidth=500] - Terrain width to be used by the generator (default 500).
      * @param {Number} [terrainLength=2000] - Terrain length to be used by the generator (default 2000).
      */
-    constructor(islandTextures, terrainWidth, terrainLength) {
+    constructor(scene, islandTextures, terrainWidth, terrainLength) {
         // (Guard Clause) If no textures were recieved in constructor, throw error.
         if (!islandTextures.length) throw new Error('TerrainGenerator needs at least 1 island texture');
 
@@ -67,6 +70,8 @@ export default class TerrainGenerator {
         // If terrain width or height were recieved, update the properties.
         if (terrainWidth) this.terrainWidth = terrainWidth;
         if (terrainLength) this.terrainLength = terrainLength;
+
+        this.scene = scene;
     };
 
     /**
@@ -98,8 +103,12 @@ export default class TerrainGenerator {
         plane.rotateX(Math.PI / 2);
 
         // [DEBUG] Shows plane in a 3rd person perspective.
-        // plane.position.set(0, -40, -200);
-        // plane.rotateZ(Math.PI / 2);
+        //plane.position.set(0, -40, -200);
+        //plane.rotateZ(Math.PI / 2);
+
+        //plane.position.set(-30, 0, -7);
+        //plane.scale.set(0.060, 0.060, 0.060);
+        //plane.rotation.z = 20
         
         /*
         * Set shape, roughness, and slope for the terrain randomly and generate 
@@ -209,4 +218,80 @@ export default class TerrainGenerator {
             return shapeTerm + roughnessTerm + slopeTerm;
         };
     };
+
+    generateClouds() {
+        let cloud = this.scene.getObjectByName('cloud');
+
+        let cloud_clone = cloud.clone();
+        
+        const x = Math.round(Math.random() * this.terrainWidth) - this.terrainWidth / 2;
+        const y = Math.round(Math.random() * 200) + 120 / 2;
+        const z = Math.round(Math.random() * this.terrainLength) - this.terrainLength / 2;
+
+        cloud_clone.position.set(x, y, z);
+        cloud_clone.scale.set(0.3, 0.3, 0.3);
+
+        this.scene.add(cloud_clone);
+    };
+
+    generateEnemies() {
+        let pigeon = this.scene.getObjectByName('pigeon');
+
+        let pigeon_clone = pigeon.clone();
+        
+        const x = Math.round(Math.random() * this.terrainWidth) - this.terrainWidth / 2;
+        const y = Math.round(Math.random() * 200) + 120 / 2;
+        const z = Math.round(Math.random() * this.terrainLength) - this.terrainLength / 2;
+
+        pigeon_clone.position.set(x, y, z);
+        pigeon_clone.scale.set(0.05, 0.05, 0.05);
+
+        this.scene.add(pigeon_clone);
+    };
+
+        /**
+     * Generates a random int between min and max.
+     * @param {Number} min - The minimum value of the random int.
+     * @param {Number} max - The maximum value of the random int.
+     * @returns {Function} A fixed function that generates a random int between min and max.
+     */
+    getRandomInt(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    generatePowers() {
+        let pw1 = this.scene.getObjectByName('pw1');
+        let pw2 = this.scene.getObjectByName('pw2');
+        let pw3 = this.scene.getObjectByName('pw3');
+
+        let powers = [];
+
+        powers.push(pw1);
+        powers.push(pw2);
+        powers.push(pw3);
+
+        let random = this.getRandomInt(0, 2)
+
+        let power_clone = powers[random].clone();
+
+        const x = Math.round(Math.random() * this.terrainWidth) - this.terrainWidth / 2;
+        const y = Math.round(Math.random() * 200) + 120 / 2;
+        const z = Math.round(Math.random() * this.terrainLength) - this.terrainLength / 2;
+
+        power_clone.position.set(x, y, z);
+        power_clone.scale.set(0.05, 0.05, 0.05);
+
+        this.scene.add(power_clone);
+
+    };
+
+    // update() {
+    //     this.#generateClouds();
+    //     console.log("hola")
+    //     // const interval = setInterval(this.#generateClouds(), 500);
+    //     // console.log(interval)
+    // };
 };
