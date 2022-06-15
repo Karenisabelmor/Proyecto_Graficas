@@ -9,7 +9,7 @@
 "use strict";
 
 // Import ThreeJs
-import { Mesh, Vector3, Quaternion } from '../../libs/three.js/three.module.js';
+import { Mesh, Vector3, Quaternion} from '../../libs/three.js/three.module.js';
 // import * as THREE from '../../libs/three.js/three.module.js';
 
 // Import cannon-es

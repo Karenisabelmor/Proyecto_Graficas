@@ -62,14 +62,13 @@ button:hover {
 .box {
     background-color: #ffffff;
     width: 500px;
-    height: 160px;
+    height: 140px;
     padding: 20px 20px;
     border-radius: 10px;
     box-sizing: content-box;
 }
 
 p {
-    margin:5%;
     color: #000000;
     font-size: 1.2vw;
     text-align: justify;
@@ -94,4 +93,17 @@ label{
     margin-top: 10px;
     margin-left: 90px;
     font-family:'Montserrat', sans-serif;
+}
+
+.controls {
+    text-align: center;
+}
+
+.box1 {
+    background-color: #ffffff;
+    width: 600px;
+    height: 200px;
+    padding: 10px 10px;
+    border-radius: 10px;
+    box-sizing: content-box;
 }

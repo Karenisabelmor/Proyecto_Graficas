@@ -5,6 +5,8 @@
  * @module TerrainGenerator
  * @file Terrain generator module for Tiny Wings 3D (ThreeJs)
  * @author Emilio Popovits Blake
+ * @author Ana Paola Minchaca
+ * @author Karen Morgado
  */
 
 "use strict";
@@ -28,6 +30,7 @@ import { Trimesh, Body, Material } from '../../libs/cannon-es.js/cannon-es.js';
  * @property {String[]} islandTextures - Array with paths to island textures.
  * @property {Group[]} clouds - Array with cloud models.
  * @property {Group[]} enemies - Array with enemy models.
+ * @property {Group[]} apples - Array with apple models.
  * @property {Group[]} powerups - Array with powerup models.
  * @property {Number} terrainWidth - Terrain width to be used by the generator.
  * @property {Number} terrainLength - Terrain length to be used by the generator.
@@ -50,11 +53,20 @@ export default class TerrainGenerator {
      */
     enemies = [];
     /**
+     * Array with apple models.
+     * @type {Group[]}
+     */
+    apples = [];
+    /**
      * Array with powerup models.
      * @type {Group[]}
      */
     powerups = [];
-
+    /**
+     * Array with generated clouds.
+     * @type {Group[]}
+     */
+    generatedClouds = [];
     /**
      * Terrain width to be used by the generator.
      * @type {Number}
@@ -74,10 +86,12 @@ export default class TerrainGenerator {
      * @param {Group[]} clouds - Array with cloud models.
      * @param {Group[]} enemies - Array with enemy models.
      * @param {Group[]} powerups - Array with powerup models.
+     * @param {Group[]} apples - Array with apple models.
+     * @param {Number} cloudNumber - Number of clouds to generate.
      * @param {Number} [terrainWidth=500] - Terrain width to be used by the generator (default 500).
      * @param {Number} [terrainLength=2000] - Terrain length to be used by the generator (default 2000).
      */
-    constructor(islandTextures, clouds, enemies, powerups, terrainWidth, terrainLength) {
+    constructor(islandTextures, clouds, enemies, apples, powerups, cloudNumber, terrainWidth, terrainLength) {
         // (Guard Clause) If no textures were recieved in constructor, throw error.
         if (!islandTextures.length) throw new Error('TerrainGenerator needs at least 1 island texture');
 
@@ -89,10 +103,12 @@ export default class TerrainGenerator {
             return islandTextures[idx];
         });
 
-        // Initialize clouds, enemies, and powerups properties
+        // Initialize clouds, enemies, apples and powerups properties
         this.clouds = clouds;
         this.enemies = enemies;
+        this.apples = apples;
         this.powerups = powerups;
+        this.generatedClouds = this.#generateClouds(cloudNumber);
 
         // If terrain width or height were recieved, update the properties.
         if (terrainWidth) this.terrainWidth = terrainWidth;
@@ -294,17 +310,23 @@ export default class TerrainGenerator {
         return new Vector3(islandEndStart.x, islandEndStart.y, zDifference);
     };
 
-    generateClouds() {
-        const cloud = this.clouds[Math.round(Math.random() * (this.clouds.length - 1))].clone();
-        
-        const x = Math.round(Math.random() * this.terrainWidth) - this.terrainWidth / 2;
-        const y = Math.round(Math.random() * 200) + 500;
-        const z = Math.round(Math.random() * this.terrainLength) - this.terrainLength / 2;
+    #generateClouds(amount) {
+        const clouds = Array(amount).fill().map(_ => {
+            const cloud = this.clouds[Math.round(Math.random() * (this.clouds.length - 1))].clone();
+            
+            const x = Math.round(Math.random() * this.terrainWidth) - this.terrainWidth / 2;
+            //const y = Math.round(Math.random() * 200) + 250;
+            const y = Math.round(Math.random() * 200) + 100;
+            const z = Math.round(Math.random() * this.terrainLength) - this.terrainLength / 2;
 
-        cloud.position.set(x, y, z);
-        cloud.scale.set(0.3, 0.3, 0.3);
+            cloud.position.set(x, y, z);
+            cloud.scale.set(0.2, 0.2, 0.2);
 
-        return cloud
+            return cloud;
+        })
+
+    return clouds;
+
     };
 
     generateEnemy() {
@@ -318,6 +340,20 @@ export default class TerrainGenerator {
         enemy.scale.set(0.05, 0.05, 0.05);
 
         return enemy;
+    };
+
+    generateApple() {
+        const apple = this.apples[Math.round(Math.random() * (this.apples.length - 1))].clone();
+        
+        const x = Math.round(Math.random() * this.terrainWidth) - this.terrainWidth / 2;
+        // const y = Math.round(Math.random() * 200) + 120 / 2;
+        const y = Math.round(Math.random() * 200);
+        const z = Math.round(Math.random() * this.terrainLength) - this.terrainLength / 2;
+
+        apple.position.set(x, y, z);
+        apple.scale.set(0.3, 0.3, 0.3);
+
+        return apple;
     };
 
     /**
@@ -337,12 +373,17 @@ export default class TerrainGenerator {
        const powerup = this.powerups[Math.round(Math.random() * (this.powerups.length - 1))].clone();
 
         const x = Math.round(Math.random() * this.terrainWidth) - this.terrainWidth / 2;
-        const y = Math.round(Math.random() * 200) + 120 / 2;
+        const y = Math.round(Math.random() * 200);
         const z = Math.round(Math.random() * this.terrainLength) - this.terrainLength / 2;
+    
+        //console.log(this.powerups);
+        this.powerups[0].name = "Pink";
+        this.powerups[1].name = "Blue";
+        this.powerups[2].name = "Green";
 
         powerup.position.set(x, y, z);
-        powerup.scale.set(0.05, 0.05, 0.05);
+        powerup.scale.set(0.08, 0.08, 0.08);
 
-        return powerup
+        return powerup;
     };
 };
