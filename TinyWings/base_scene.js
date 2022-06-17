@@ -110,7 +110,7 @@ async function setupScene() {
     const playerMesh = new THREE.Object3D();
     playerModel.rotateY(Math.PI);
     playerMesh.add(playerModel);
-    
+
     const player = { mesh: playerMesh, body: playerBody }
     
     return { directionalLight, hemisphereLight, player, apple, cloud, enemy, powerups };
@@ -137,7 +137,7 @@ async function main() {
     // Instantiate TerrainGenerator
     const islandTextures = ['./images/water_texture.jpg', './images/desert_texture.jpeg', './images/ice_texture.jpeg', './images/grass_texture.jpeg'];
     const terrainGenerator = new TerrainGenerator(islandTextures, [cloud], [enemy], [apple], powerups, 10);
-    const island = terrainGenerator.generateTerrain(3);
+    const island = terrainGenerator.generateTerrain(5);
     const generatedClouds = terrainGenerator.generatedClouds;
     // island.mesh.receiveShadow = true;
     islands.add(island.mesh);
