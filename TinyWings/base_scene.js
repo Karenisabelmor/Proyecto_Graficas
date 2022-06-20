@@ -4,9 +4,10 @@ import * as THREE from '../libs/three.js/three.module.js';
 import * as CANNON from '../libs/cannon-es.js/cannon-es.js';
 import CannonDebugger from '../libs/cannon-es-debugger/cannon-es-debugger.js';
 import { OrbitControls } from '../libs/three.js/controls/OrbitControls.js';
-import TerrainGenerator from './modules/TerrainGenerator.js';
+import TerrainGenerator from './modules/TerrainGenerator2.js';
 import PlayerControls from './modules/PlayerControls.js';
 import ThirdPersonCamera from './modules/ThirdPersonCamera.js';
+import GameManager from './modules/GameManager.js';
 import * as Loaders from './modules/Loaders.js';
 
 // Variables and flags
@@ -47,7 +48,8 @@ function setupThreeJs() {
     scene.background = new THREE.Color( 'skyblue' );
 
     // Setup Perspective Camera
-    const camera = new THREE.PerspectiveCamera(45, canvas.width / canvas.height, 1, 4000);
+    // const camera = new THREE.PerspectiveCamera(45, canvas.width / canvas.height, 1, 4000);
+    const camera = new THREE.PerspectiveCamera(45, canvas.width / canvas.height, 1, 10000);
     camera.position.set(0, 220, 1500);
 
     // Orbit controls
@@ -80,7 +82,10 @@ async function setupScene() {
     };
 
     // Load models
-    const [playerModel, apple, cloud, enemy, ...powerups] = await Promise.all([
+    const [
+        playerModel, apple, cloud, enemy, 
+        powerup0, powerup1, powerup2, ...terrainModels
+    ] = await Promise.all([
         // Load the player
         Loaders.loadFBX('./models/cerdo/cerdito_alas.fbx'),
 
@@ -96,7 +101,20 @@ async function setupScene() {
         // Load powerups
         Loaders.loadFBX('./models/power_ups/pwr1.fbx'),
         Loaders.loadFBX('./models/power_ups/pwr2.fbx'),
-        Loaders.loadFBX('./models/power_ups/pwr3.fbx')
+        Loaders.loadFBX('./models/power_ups/pwr3.fbx'),
+
+        // Load terrain models
+        Loaders.loadFBX('./models/hill_assets/bush1.fbx'),
+        Loaders.loadFBX('./models/hill_assets/bush2.fbx'),
+        Loaders.loadFBX('./models/hill_assets/bush3.fbx'),
+        Loaders.loadFBX('./models/hill_assets/combo.fbx'),
+        Loaders.loadFBX('./models/hill_assets/rock1.fbx'),
+        Loaders.loadFBX('./models/hill_assets/rock2.fbx'),
+        Loaders.loadFBX('./models/hill_assets/rock3.fbx'),
+        Loaders.loadFBX('./models/hill_assets/rock4.fbx'),
+        Loaders.loadFBX('./models/hill_assets/rock5.fbx'),
+        Loaders.loadFBX('./models/hill_assets/tree1.fbx'),
+        Loaders.loadFBX('./models/hill_assets/tree2.fbx'),
     ]);
 
     const playerBody = new CANNON.Body({
@@ -111,9 +129,17 @@ async function setupScene() {
     playerModel.rotateY(Math.PI);
     playerMesh.add(playerModel);
 
-    const player = { mesh: playerMesh, body: playerBody }
+    const player = { mesh: playerMesh, body: playerBody };
+
+    apple.rotateX(-Math.PI / 2);
+    enemy.rotateX(-Math.PI / 2);
+
+    const powerups = [powerup0, powerup1, powerup2];
+    powerups[0].name = 'Pink';
+    powerups[1].name = 'Blue';
+    powerups[2].name = 'Green';
     
-    return { directionalLight, hemisphereLight, player, apple, cloud, enemy, powerups };
+    return { directionalLight, hemisphereLight, player, apple, cloud, enemy, powerups, terrainModels };
 };
 
 async function main() {
@@ -121,7 +147,7 @@ async function main() {
 
     const { 
         directionalLight, hemisphereLight, player,
-        apple, cloud, enemy, powerups 
+        apple, cloud, enemy, powerups, terrainModels
     } = await setupScene();
     scene.add(directionalLight, hemisphereLight);
 
@@ -136,20 +162,16 @@ async function main() {
 
     // Instantiate TerrainGenerator
     const islandTextures = ['./images/water_texture.jpg', './images/desert_texture.jpeg', './images/ice_texture.jpeg', './images/grass_texture.jpeg'];
-    const terrainGenerator = new TerrainGenerator(islandTextures, [cloud], [enemy], [apple], powerups, 10);
-    const island = terrainGenerator.generateTerrain(5);
-    const generatedClouds = terrainGenerator.generatedClouds;
+    // const terrainGenerator = new TerrainGenerator(islandTextures, [cloud], [enemy], [apple], powerups, 10);
+    const island = new TerrainGenerator(islandTextures, [cloud], terrainModels);
+    island.generateTerrain(0, 10, 10);
     // island.mesh.receiveShadow = true;
     islands.add(island.mesh);
     world.addBody(island.body);
 
-    let clouds = [];
-    // Add clouds to scene
-    generatedClouds.forEach((cloud, index) => {
-        cloud.name = 'Cloud' + index;
-        clouds.push(cloud);
-        scene.add(cloud);
-    })
+    island.body.position.set(0, 0, 950 - island.terrainLength / 2)
+
+    const clouds = island.mesh.getObjectByName('Clouds').children;
 
     // Transform player
     player.body.position.set(0, 40, 950);
@@ -172,32 +194,38 @@ async function main() {
     const [idealOffset, idealLookat] = [new THREE.Vector3(200, 100, 200), new THREE.Vector3(50, -30, -100)];
     const thirdPersonCamera = new ThirdPersonCamera(camera, playerControls, islands, idealOffset, idealLookat);
 
-    let apples = [];
-    let powerup1 = [];
-    let powerup2 = [];
-    let powerup3 = [];
-    let enemies = [];
+    const gameManager = new GameManager(island, player, [enemy], [apple], powerups);
+    gameManager.enemyObjects = 1;
+    gameManager.scoreObjects *= 4;
+    gameManager.powerupObjects *= 4;
+    gameManager.populateIslandObjects();
 
-    // Load objects on terrain
-    for (let i = 0; i < 15; i ++) {
-        const apple = terrainGenerator.generateApple();
-        apple.name = 'Apple' + i;
-        const enemy = terrainGenerator.generateEnemy();
-        enemy.name = 'Enemy' + i;
-        const powerup = terrainGenerator.generatePowerup();
-        apples.push(apple);
-        enemies.push(enemy);
-        if (powerup.name == "Pink"){
-            powerup1.push(powerup);
-        }
-        if (powerup.name == "Blue"){
-            powerup2.push(powerup);
-        }
-        if (powerup.name == "Green"){
-            powerup3.push(powerup);
-        }
-        scene.add(apple, powerup, enemy);
-    }
+    // let apples = [];
+    // let powerup1 = [];
+    // let powerup2 = [];
+    // let powerup3 = [];
+    // let enemies = [];
+
+    // // Load objects on terrain
+    // for (let i = 0; i < 15; i ++) {
+    //     const apple = terrainGenerator.generateApple();
+    //     apple.name = 'Apple' + i;
+    //     const enemy = terrainGenerator.generateEnemy();
+    //     enemy.name = 'Enemy' + i;
+    //     const powerup = terrainGenerator.generatePowerup();
+    //     apples.push(apple);
+    //     enemies.push(enemy);
+    //     if (powerup.name == "Pink"){
+    //         powerup1.push(powerup);
+    //     }
+    //     if (powerup.name == "Blue"){
+    //         powerup2.push(powerup);
+    //     }
+    //     if (powerup.name == "Green"){
+    //         powerup3.push(powerup);
+    //     }
+    //     scene.add(apple, powerup, enemy);
+    // }
 
     // Audios
     var bg = new Audio('./audio/power_up_bg.mp3');
@@ -206,8 +234,7 @@ async function main() {
     var game_over = new Audio('./audio/game_over.mp3');
 
     bg.volume = 0.05;
-    bg.play();
-
+    // bg.play();
 
     const cannonDebugger = new CannonDebugger(scene, world, { color: 0x00FF00, scale: 1.0 });
     const clock = new THREE.Clock();
@@ -220,25 +247,24 @@ async function main() {
             playerControls.update();
             player.mesh.position.copy(player.body.position);
             player.mesh.quaternion.copy(player.body.quaternion);
-            thirdPersonCamera.update(deltaTime);
+            // thirdPersonCamera.update(deltaTime);
         } else {
             world.gravity.set(0, 0, 0);
             bird_impact.pause();
             collect_sound.pause();
             bg.pause();
-            let element = document.getElementById('gameover-screen');
-            let display = ( true ) ? 'block' : 'none';
-            element.style.display = display;
+            let gameOverScreen = document.getElementById('gameover-screen');
+            gameOverScreen.style.display = 'block';
         }
 
-        checkCollision();
+        // checkCollision();
         // let helper = playerControls.update();
         // scene.add(helper)
         island.mesh.position.copy(island.body.position);
         island.mesh.quaternion.copy(island.body.quaternion);
         requestAnimationFrame(animate);
         // cannonDebugger.update();
-        // orbitControls.update();
+        orbitControls.update();
         renderer.render(scene, camera);
 
     };
