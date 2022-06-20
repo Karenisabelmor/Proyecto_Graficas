@@ -35,8 +35,8 @@ export default class GameManager {
 
     populateIslandObjects() {
         this.#generateEnemies();
-        // this.#generateScoreObjects();
-        // this.#generatePowerups();
+        this.#generateScoreObjects();
+        this.#generatePowerups();
     };
 
     #generateEnemies() {
@@ -100,6 +100,7 @@ export default class GameManager {
 
     #collisionWith(object) {
         if (object.name.includes('Score Object')) {
+            console.log(`Collided with ${object.name}`)
             // score++;
             // collect_sound.play();
             // scoreText.innerText = `Score: ${score} `;
@@ -107,6 +108,7 @@ export default class GameManager {
         }
 
         if (object.name.includes('Enemy')) {
+            console.log(`Collided with ${object.name}`)
             // bird_impact.play();
             // if (score <= 0) return;
             // colisiones.push(enemies[i].name)
@@ -116,6 +118,7 @@ export default class GameManager {
         }
 
         if (object.name.includes('Cloud')) {
+            console.log(`Collided with ${object.name}`)
             // colisiones.push(clouds[i].name)
             // dead = true;
             // game_over.play();
@@ -123,6 +126,7 @@ export default class GameManager {
         }
 
         if (object.name.includes('Pink')) {
+            console.log(`Collided with ${object.name}`)
             // score = score * 2;
             // scoreText.innerText = `Score: ${score} ` ;
             // setTimeout(checkCollision, 2000);
@@ -130,6 +134,7 @@ export default class GameManager {
         }
 
         if (object.name.includes('Blue')) {
+            console.log(`Collided with ${object.name}`)
             // enemyBox.makeEmpty();
             // cloudBox.makeEmpty();
             // setTimeout(function (){
@@ -140,6 +145,7 @@ export default class GameManager {
         }
 
         if (object.name.includes('Green')) {
+            console.log(`Collided with ${object.name}`)
             // for (let i = 0; i < enemies.length; i++) {
             //     enemies[i].scale.set(0.03, 0.03, 0.03);
             // }

@@ -195,7 +195,7 @@ async function main() {
     const thirdPersonCamera = new ThirdPersonCamera(camera, playerControls, islands, idealOffset, idealLookat);
 
     const gameManager = new GameManager(island, player, [enemy], [apple], powerups);
-    gameManager.enemyObjects = 1;
+    gameManager.enemyObjects *= 4;
     gameManager.scoreObjects *= 4;
     gameManager.powerupObjects *= 4;
     gameManager.populateIslandObjects();
@@ -247,7 +247,7 @@ async function main() {
             playerControls.update();
             player.mesh.position.copy(player.body.position);
             player.mesh.quaternion.copy(player.body.quaternion);
-            // thirdPersonCamera.update(deltaTime);
+            thirdPersonCamera.update(deltaTime);
         } else {
             world.gravity.set(0, 0, 0);
             bird_impact.pause();
@@ -257,6 +257,8 @@ async function main() {
             gameOverScreen.style.display = 'block';
         }
 
+        gameManager.update();
+
         // checkCollision();
         // let helper = playerControls.update();
         // scene.add(helper)
@@ -264,7 +266,7 @@ async function main() {
         island.mesh.quaternion.copy(island.body.quaternion);
         requestAnimationFrame(animate);
         // cannonDebugger.update();
-        orbitControls.update();
+        // orbitControls.update();
         renderer.render(scene, camera);
 
     };
