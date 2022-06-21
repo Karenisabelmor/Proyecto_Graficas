@@ -227,11 +227,11 @@ export default class GameManager {
 
         // Initialize object generation amount properties with values provided in 
         // settings values, or default values if they were not provided.
-        this.#cloudObjects = settings.cloudObjects ?? this.#cloudObjects;
-        this.#terrainObjects = settings.terrainObjects ?? this.#terrainObjects;
-        this.#enemyObjects = settings.enemyObjects ?? this.#enemyObjects;
-        this.#scoreObjects = settings.scoreObjects ?? this.#scoreObjects;
-        this.#powerupObjects = settings.powerupObjects ?? this.#powerupObjects;
+        this.#cloudObjects = settings?.cloudObjects ?? this.#cloudObjects;
+        this.#terrainObjects = settings?.terrainObjects ?? this.#terrainObjects;
+        this.#enemyObjects = settings?.enemyObjects ?? this.#enemyObjects;
+        this.#scoreObjects = settings?.scoreObjects ?? this.#scoreObjects;
+        this.#powerupObjects = settings?.powerupObjects ?? this.#powerupObjects;
 
         // Initialize audio manager and start playing background music
         this.#audio = new AudioManager(

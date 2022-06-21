@@ -15,7 +15,7 @@ import {
     Mesh, TextureLoader, RepeatWrapping, DoubleSide, 
     PlaneBufferGeometry, MeshStandardMaterial, MeshPhongMaterial, 
     MeshBasicMaterial, SphereGeometry, Vector3, Texture, BufferGeometry, 
-    Group, Line, BufferGeometry, LineBasicMaterial
+    Group, Line, LineBasicMaterial
 } from '../../libs/three.js/three.module.js';
 import { Trimesh, Body, Material } from '../../libs/cannon-es.js/cannon-es.js';
 

@@ -69,8 +69,8 @@ export default class PlayerControls {
     /** Function called every frame to perform player controls actions. */
     update() {
         // If enter is pressed, start game
-        const enterPressed = this.#keysPressed[ENTER] === true;
-        if (enterPressed) this.#startGame = true;
+        // const enterPressed = this.#keysPressed[ENTER] === true;
+        // if (enterPressed) this.#startGame = true;
         // if (!this.#startGame) return;
 
         // If space is pressed, increase player's mass so he falls faster
