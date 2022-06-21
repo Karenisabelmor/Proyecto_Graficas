@@ -4,19 +4,11 @@ import * as THREE from '../libs/three.js/three.module.js';
 import * as CANNON from '../libs/cannon-es.js/cannon-es.js';
 import CannonDebugger from '../libs/cannon-es-debugger/cannon-es-debugger.js';
 import { OrbitControls } from '../libs/three.js/controls/OrbitControls.js';
-import TerrainGenerator from './modules/TerrainGenerator2.js';
+import TerrainGenerator from './modules/TerrainGenerator.js';
 import PlayerControls from './modules/PlayerControls.js';
 import ThirdPersonCamera from './modules/ThirdPersonCamera.js';
 import GameManager from './modules/GameManager.js';
 import * as Loaders from './modules/Loaders.js';
-
-// Variables and flags
-let score = 1;
-let scoreText = document.getElementById("score");
-let colisiones = [];
-let dead = false;
-let flag = false;
-let enemyBox, cloudBox;
 
 /**
  * Sets up ThreeJs environment.
@@ -122,8 +114,8 @@ async function setupScene() {
         shape: new CANNON.Sphere(14),
         material: new CANNON.Material('playerMaterial')
     });
-    playerBody.fixedRotation = true;
-    playerBody.updateMassProperties();
+    // playerBody.fixedRotation = false;
+    // playerBody.updateMassProperties();
 
     const playerMesh = new THREE.Object3D();
     playerModel.rotateY(Math.PI);
@@ -153,88 +145,45 @@ async function main() {
 
     // Initialize CANNON world
     const world = new CANNON.World();
+    // world.gravity.set(0, -98.1, 0);
     world.gravity.set(0, -98.1, 0);
+
+    // Transform player
+    player.body.position.set(0, 40, 950);
+    player.mesh.scale.set(0.2, 0.2, 0.2);
+    // player.mesh.castShadow = true;
+    // player.mesh.receiveShadow = false;
+
+    // Add player to world
+    scene.add(player.mesh);
+    world.addBody(player.body);
 
     // Create island group for collision test
     const islands = new THREE.Group();
     islands.name = 'Islands';
     scene.add(islands);
 
-    // Instantiate TerrainGenerator
-    const islandTextures = ['./images/water_texture.jpg', './images/desert_texture.jpeg', './images/ice_texture.jpeg', './images/grass_texture.jpeg'];
-    // const terrainGenerator = new TerrainGenerator(islandTextures, [cloud], [enemy], [apple], powerups, 10);
-    const island = new TerrainGenerator(islandTextures, [cloud], terrainModels);
-    island.generateTerrain(0, 10, 10);
-    // island.mesh.receiveShadow = true;
-    islands.add(island.mesh);
-    world.addBody(island.body);
-
-    island.body.position.set(0, 0, 950 - island.terrainLength / 2)
-
-    const clouds = island.mesh.getObjectByName('Clouds').children;
-
-    // Transform player
-    player.body.position.set(0, 40, 950);
-    player.mesh.scale.set(0.2, 0.2, 0.2);
-    // player.mesh.castShadow = true;
-    // player.mesh.receiveShadow = false;    
-
-    // Add player to world
-    scene.add(player.mesh);
-    world.addBody(player.body);
-
-    // Create ground and player contact material
-    const slipperyGroundContactMaterial = new CANNON.ContactMaterial(island.body.material, player.body.material, { friction: 0, restitution: 0 });
-    world.addContactMaterial(slipperyGroundContactMaterial);
-
     // Instantiate PlayerControls
     const playerControls = new PlayerControls(player);
-
+    
     // Instantiate ThirdPersonCamera
-    const [idealOffset, idealLookat] = [new THREE.Vector3(200, 100, 200), new THREE.Vector3(50, -30, -100)];
+    const [idealOffset, idealLookat] = [new THREE.Vector3(200, 100, 300), new THREE.Vector3(50, -20, -200)];
     const thirdPersonCamera = new ThirdPersonCamera(camera, playerControls, islands, idealOffset, idealLookat);
 
-    const gameManager = new GameManager(island, player, [enemy], [apple], powerups);
-    gameManager.enemyObjects *= 4;
-    gameManager.scoreObjects *= 4;
-    gameManager.powerupObjects *= 4;
-    gameManager.populateIslandObjects();
+    // Instantiate TerrainGenerator
+    const islandTextures = ['./images/water_texture.jpg', './images/desert_texture.jpeg', './images/ice_texture.jpeg', './images/grass_texture.jpeg'];
+    const terrainGenerator = new TerrainGenerator(islandTextures, [cloud], terrainModels, 1000);
 
-    // let apples = [];
-    // let powerup1 = [];
-    // let powerup2 = [];
-    // let powerup3 = [];
-    // let enemies = [];
-
-    // // Load objects on terrain
-    // for (let i = 0; i < 15; i ++) {
-    //     const apple = terrainGenerator.generateApple();
-    //     apple.name = 'Apple' + i;
-    //     const enemy = terrainGenerator.generateEnemy();
-    //     enemy.name = 'Enemy' + i;
-    //     const powerup = terrainGenerator.generatePowerup();
-    //     apples.push(apple);
-    //     enemies.push(enemy);
-    //     if (powerup.name == "Pink"){
-    //         powerup1.push(powerup);
-    //     }
-    //     if (powerup.name == "Blue"){
-    //         powerup2.push(powerup);
-    //     }
-    //     if (powerup.name == "Green"){
-    //         powerup3.push(powerup);
-    //     }
-    //     scene.add(apple, powerup, enemy);
-    // }
-
-    // Audios
-    var bg = new Audio('./audio/power_up_bg.mp3');
-    var collect_sound = new Audio('./audio/collect_sound.mp3');
-    var bird_impact = new Audio('./audio/bird_impact.mp3');
-    var game_over = new Audio('./audio/game_over.mp3');
-
-    bg.volume = 0.05;
-    // bg.play();
+    // Instantiate GameManager
+    const gameManagerSettings = {
+        cloudObjects: 50,
+        terrainObjects: 40,
+        enemyObjects: 10,
+        scoreObjects: 25,
+        powerupObjects: 6,
+    };
+    const gameManager = new GameManager(player, terrainGenerator, [enemy], [apple], powerups, gameManagerSettings);
+   
 
     const cannonDebugger = new CannonDebugger(scene, world, { color: 0x00FF00, scale: 1.0 });
     const clock = new THREE.Clock();
@@ -243,156 +192,22 @@ async function main() {
 
         world.fixedStep();
 
-        if(dead == false){
-            playerControls.update();
-            player.mesh.position.copy(player.body.position);
-            player.mesh.quaternion.copy(player.body.quaternion);
-            thirdPersonCamera.update(deltaTime);
-        } else {
-            world.gravity.set(0, 0, 0);
-            bird_impact.pause();
-            collect_sound.pause();
-            bg.pause();
-            let gameOverScreen = document.getElementById('gameover-screen');
-            gameOverScreen.style.display = 'block';
-        }
-
         gameManager.update();
 
-        // checkCollision();
-        // let helper = playerControls.update();
-        // scene.add(helper)
-        island.mesh.position.copy(island.body.position);
-        island.mesh.quaternion.copy(island.body.quaternion);
-        requestAnimationFrame(animate);
+        if (gameManager.gameOver) return;
+
+        playerControls.update();
+        thirdPersonCamera.update(deltaTime);
         // cannonDebugger.update();
         // orbitControls.update();
+
+        player.mesh.position.copy(player.body.position);
+        player.mesh.quaternion.copy(player.body.quaternion);
+
+        requestAnimationFrame(animate);
         renderer.render(scene, camera);
-
     };
-
     animate();
-
-    // Check for collisions
-    function checkCollision(){
-        let playerBox = new THREE.Box3().setFromObject(player.mesh);
-        playerBox.max.x = playerBox.max.x - 18;
-        playerBox.max.y = playerBox.max.y - 15;
-        playerBox.max.z = playerBox.max.z - 18;
-        
-        // Check for collisions with apples
-        for (let i = 0; i < apples.length; i++) {
-            const appleBox = new THREE.Box3().setFromObject(apples[i]);
-            if (appleBox.intersectsBox(playerBox)) {
-                scene.remove(apples[i]);
-                if (!colisiones.includes(apples[i].name)) {
-                    colisiones.push(apples[i].name)
-                    score = score + 1;
-                    collect_sound.play();
-                    scoreText.innerText = `Score: ${score} ` 
-                }
-            }
-        }
-        // Check for collisions with enemies
-        if(flag == false){
-            for (let i = 0; i < enemies.length; i++) {
-                enemies[i].scale.set(0.05, 0.05, 0.05);
-                enemyBox = new THREE.Box3().setFromObject(enemies[i]);
-                if (enemyBox.intersectsBox(playerBox)) {
-                    scene.remove(enemies[i]);
-                    bird_impact.play();
-                    if (!colisiones.includes(enemies[i].name) && score > 0) {
-                        colisiones.push(enemies[i].name)
-                        score = score - 1;
-                        scoreText.innerText = `Score: ${score} ` 
-                    }
-                }
-            }
-        }
-        // Check for collisions with clouds
-        if(flag == false){
-            for (let i = 0; i < clouds.length; i++) {
-                clouds[i].scale.set(0.2, 0.2, 0.2);
-                cloudBox = new THREE.Box3().setFromObject(clouds[i]);
-                cloudBox.max.x = cloudBox.max.x - 22;
-                cloudBox.max.y = cloudBox.max.y - 22;
-                cloudBox.max.z = cloudBox.max.z - 22;
-                if (cloudBox.intersectsBox(playerBox)) {
-                    if (!colisiones.includes(clouds[i].name)) {
-                        colisiones.push(clouds[i].name)
-                        dead = true;
-                        game_over.play();
-                    }
-                }
-            }
-        }
-        // Check for collisions with pink powerup
-        for (let i = 0; i < powerup1.length; i++) {
-            const pinkBox = new THREE.Box3().setFromObject(powerup1[i]);
-            if (pinkBox.intersectsBox(playerBox)) {
-                scene.remove(powerup1[i]);
-                if (!colisiones.includes(powerup1[i].name)) {
-                    colisiones.push(powerup1[i].name)
-                    doubleScore();
-                }
-            }
-        }
-        // Check for collisions with blue powerup
-        for (let i = 0; i < powerup2.length; i++) {
-            const blueBox = new THREE.Box3().setFromObject(powerup2[i]);
-            if (blueBox.intersectsBox(playerBox)) {
-                scene.remove(powerup2[i]);
-                if (!colisiones.includes(powerup2[i].name)) {
-                    colisiones.push(powerup2[i].name)
-                    invisiblePlayer();
-                    flag = true;
-                }
-            }
-        }
-
-         // Check for collisions with green powerup
-        for (let i = 0; i < powerup3.length; i++) {
-            const greenBox = new THREE.Box3().setFromObject(powerup3[i]);
-            if (greenBox.intersectsBox(playerBox)) {
-                scene.remove(powerup3[i]);
-                if (!colisiones.includes(powerup3[i].name)) {
-                    colisiones.push(powerup3[i].name)
-                    smallerObstacles();
-                    flag = true;
-                }
-            }
-        }
-    }
-
-    // Double your current score
-    function doubleScore(){
-        score = score * 2;
-        scoreText.innerText = `Score: ${score} ` 
-        setTimeout(checkCollision, 2000);
-    }
-
-    // Make player invisible against obstacles and enemies
-    function invisiblePlayer(){
-        enemyBox.makeEmpty();
-        cloudBox.makeEmpty();
-        setTimeout(function (){
-            flag = false;
-            checkCollision();
-        }, 3000);
-    }
-    
-    function smallerObstacles(){
-        for (let i = 0; i < enemies.length; i++) {
-            enemies[i].scale.set(0.03, 0.03, 0.03);
-        }
-        for (let i = 0; i < clouds.length; i++) {
-            clouds[i].scale.set(0.09, 0.09, 0.09);
-        }
-        setTimeout(function (){
-            flag = false;
-            checkCollision();
-        }, 4000);
-    }
 
     function resize() {
         const canvas = document.getElementById("webglcanvas");

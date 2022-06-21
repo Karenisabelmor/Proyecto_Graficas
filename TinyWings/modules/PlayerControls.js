@@ -91,7 +91,8 @@ export default class PlayerControls {
         else this.player.body.mass = 1;
         
         // Clamp the player movement on Z (forward) to at least -100
-        const moveSpeed = 100;
+        // const moveSpeed = 100;
+        const moveSpeed = 200;
         if (Math.abs(this.player.body.velocity.z) < moveSpeed || this.player.body.velocity.z > 0) this.player.body.velocity.z = -moveSpeed;
 
         // If no directional key was pressed, keep the player's horizontal movement velocity 
@@ -99,8 +100,8 @@ export default class PlayerControls {
         const directionPressed = DIRECTION_KEYS.some(key => this.#keysPressed[key] === true);
         if (!directionPressed) this.player.body.velocity.x = 0;
         // else if (this.#keysPressed[W] === true) this.player.body.velocity.x = 0;
-        else if (this.#keysPressed[A] === true) this.player.body.velocity.x = -100;
-        else this.player.body.velocity.x = 100;
+        else if (this.#keysPressed[A] === true) this.player.body.velocity.x = -200;
+        else this.player.body.velocity.x = 200;
 
         // Calculate the rotation angle
         const playerVelocity = new Vector3().copy(this.player.body.velocity);
