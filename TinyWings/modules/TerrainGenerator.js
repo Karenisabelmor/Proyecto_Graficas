@@ -1,30 +1,42 @@
+/**
+ * Terrain Generator class, which accepts settings and can 
+ * generate wave-like terrains with clouds and vegetation.
+ * 
+ * @module TerrainGenerator
+ * @file Terrain generator module for Cuchi Tales
+ * @author Emilio Popovits Blake
+ * @author Ana Paola Minchaca Garcia
+ */
+
 "use strict";
 
+// Import third-party libraries
 import { 
     Mesh, TextureLoader, RepeatWrapping, DoubleSide, 
-    PlaneBufferGeometry, MeshStandardMaterial, MeshBasicMaterial, 
-    SphereGeometry, Vector3, Texture, BufferGeometry
+    PlaneBufferGeometry, MeshStandardMaterial, MeshPhongMaterial, 
+    MeshBasicMaterial, SphereGeometry, Vector3, Texture, BufferGeometry, 
+    Group, Line, BufferGeometry, LineBasicMaterial
 } from '../../libs/three.js/three.module.js';
-import * as THREE from '../../libs/three.js/three.module.js';
 import { Trimesh, Body, Material } from '../../libs/cannon-es.js/cannon-es.js';
-import * as CANNON from '../../libs/cannon-es.js/cannon-es.js';
 
 /**
  * Terrain Generator class, which accepts settings and can 
- * generate wave-like terrains.
+ * generate wave-like terrains with clouds and vegetation.
  * @class
  * @property {String[]} islandTextures - Array with paths to island textures.
  * @property {Group[]} clouds - Array with cloud models.
+ * @property {Group[]} terrainModels - Array with terrain models.
  * @property {Number} terrainWidth - Terrain width to be used by the generator.
- * @property {Number} terrainLength - Terrain length to be used by the generator.
  */
 export default class TerrainGenerator {
-
+    // Textures
     /**
      * Array with paths to island textures.
      * @type {String[]}
      */
     islandTextures = [];
+    
+    // Models
     /**
      * Array with cloud models.
      * @type {Group[]}
@@ -35,6 +47,8 @@ export default class TerrainGenerator {
      * @type {Group[]}
      */
     terrainModels = [];
+
+    // Terrain settings
     /**
      * Terrain width to be used by the generator.
      * @type {Number}
@@ -48,19 +62,45 @@ export default class TerrainGenerator {
      */
     #terrainLength;
 
-    /** @type {Mesh} */
+    // Terrain metadata
+    /** 
+     * Terrain ThreeJs mesh.
+     * @private
+     * @type {Mesh} 
+     */
     #mesh;
-    /** @type {Body} */
+    /** 
+     * Terrain CANNON body.
+     * @private
+     * @type {Body} 
+     */
     #body;
-
-    /** @type {Number} */
+    /** 
+     * Terrain start (z-axis).
+     * @private
+     * @type {Number} 
+     */
     #islandStart;
-    /** @type {Number} */
+    /** 
+     * Terrain end (z-axis).
+     * @private
+     * @type {Number} 
+     */
     #islandEnd;
-
+    /**
+     * Island that's being generated.
+     * @private
+     * @type {Number}
+     */
     #islandNumber;
 
-    #material = new CANNON.Material('groundMaterial');
+    // Terrain CANNON Material
+    /**
+     * Island CANNON Material
+     * @private
+     * @type {Material}
+     */
+    #material = new Material('groundMaterial');
 
     /**
      * Constructs a Terrain Generator.
@@ -90,7 +130,18 @@ export default class TerrainGenerator {
     };
 
     /**
+     * Clamps a given number to a minimum and maximum value.
+     * @private
+     * @param {Number} number - Number to clamp
+     * @param {Number} min - Minimum value of the number to clamp
+     * @param {Number} max - Maximum value of the number to clamp
+     * @returns {Number} Clamped number.
+     */
+    #clamp = (number, min, max) => Math.min(Math.max(number, min), max);
+
+    /**
      * Creates a CANNON trimesh from the ThreeJs buffer geometry recieved.
+     * @private
      * @param {BufferGeometry} geometry - ThreeJs Buffer Geometry.
      * @returns {Trimesh} A CANNON Trimesh, created from the ThreeJs buffer 
      * geometry provided.
@@ -102,20 +153,21 @@ export default class TerrainGenerator {
     };
 
     /**
-     * Generates terrain depending on the island
+     * Generates terrain depending on the island number
      * @param {Number} islandNumber - Island number to generate terrain for.
      * @param {Number} vegetationAmount - Number of terrain vegetation to generate.
      * @param {Number} cloudAmount - Number of clouds to generate.
-     * @returns {{ mesh: Mesh, body: Body }} The mesh of the generated terrain.
+     * @returns {{mesh: Mesh, body: Body, terrain: { width: Number, length: Number, start: Number, end: Number }}} The 
+     * mesh, body, and metadata of the generated terrain.
      */
     generateTerrain(islandNumber, vegetationAmount, cloudAmount) {
         // Clamp island to 0-9
-        islandNumber = islandNumber < 0 ? 0 : islandNumber > 9 ? 9 : islandNumber;
+        islandNumber = this.#clamp(islandNumber, 0, 9);
         this.#islandNumber = islandNumber;
 
         // Load island texture
-        const map = new THREE.TextureLoader().load(this.islandTextures[islandNumber]);
-        map.wrapS = map.wrapT = THREE.RepeatWrapping;
+        const map = new TextureLoader().load(this.islandTextures[islandNumber]);
+        map.wrapS = map.wrapT = RepeatWrapping;
         map.repeat.set(0.5, 20);
 
         // Create island start
@@ -144,25 +196,26 @@ export default class TerrainGenerator {
         // island.mesh.add(sphere);
         // island.mesh.position.copy(islandEndStartPosition);
 
+        // Save terrain metadata
         this.#mesh = island.mesh;
         this.#body = island.body;
         this.#islandStart = island.mesh.geometry.getAttribute('position').getY(0);
         this.#islandEnd = island.mesh.geometry.getAttribute('position').getY(island.mesh.geometry.getAttribute('position').count - 1);
 
         // Populate terrain with trees, rocks, bushes, etc.
-        const terrainAssetGroup = new THREE.Group();
+        const terrainAssetGroup = new Group();
         terrainAssetGroup.name = 'Terrain Assets';
         island.mesh.add(terrainAssetGroup);
         this.#generateTerrainAssets(terrainAssetGroup, vegetationAmount);
 
         // Generate clouds
-        const cloudGroup = new THREE.Group();
+        const cloudGroup = new Group();
         cloudGroup.name = 'Clouds';
         island.mesh.add(cloudGroup);
         this.#generateClouds(cloudGroup, cloudAmount);
 
         // Create group for objects such as enemies and powerups
-        const objectGroup = new THREE.Group();
+        const objectGroup = new Group();
         objectGroup.name = 'Objects';
         island.mesh.add(objectGroup);
 
@@ -187,6 +240,10 @@ export default class TerrainGenerator {
      * @returns {{ mesh: Mesh, body: Body }} - Island start mesh and body.
      */
     #generateIslandStart(level, map) {
+        // Generate terrain keypoints, from which a curve will later be 
+        // drawn
+
+        // Set the keypoint ranges on the z and y axes
         const minRangeZ = 450;
         const minRangeY = 150 + 20 * level;
         const rangeZ = 80;
@@ -194,10 +251,12 @@ export default class TerrainGenerator {
 
         let z = 0;
         let y = 0;
-
         let sign = 1;
         
+        // Max number of keypoints
         const maxKeyPoints = 20;
+        // Generate 20 keypoints, alternating their y component's sign, 
+        // so they make a wave-like terrain
         const keyPoints = [];
         for (let i = 0; i < maxKeyPoints; i++) {
             z += minRangeZ + Math.random() * rangeZ;
@@ -205,54 +264,69 @@ export default class TerrainGenerator {
             sign *= -1;
 
             i === 0
-                ? keyPoints.push(new THREE.Vector3(0, y, 0))
-                : keyPoints.push(new THREE.Vector3(0, y, z));
+                ? keyPoints.push(new Vector3(0, y, 0))
+                : keyPoints.push(new Vector3(0, y, z));
         }
 
         // [DEBUG] Show line made from keypoints
-        // const line = new THREE.Line(
-        //     new THREE.BufferGeometry().setFromPoints(keyPoints),
-        //     new THREE.LineBasicMaterial({ color: 0xFF0000 })
+        // const line = new Line(
+        //     new BufferGeometry().setFromPoints(keyPoints),
+        //     new LineBasicMaterial({ color: 0xFF0000 })
         // );
         // line.rotateY(Math.PI / 2);
         
+        // Connect generated keypoints with a cosine curve, generating 
+        // intermediate points between each keypoint and setting their y and 
+        // z components to follow a cosine curve between both keypoints
         const curvePoints = [];
         for (let i = 1; i < keyPoints.length; i++) {
             const point0 = keyPoints[i - 1];
             const point1 = keyPoints[i];
 
+            // Each intermediate point will be 2 units away from each other
             const segmentWidth = 2;
+            // Calculate the number of horizontal segments between each keypoint
             const horizontalSegments = Math.floor((point1.z - point0.z) / segmentWidth );
 
+            // Calculate the change in z value between one intermediate point and the other
             const delta_z = (point1.z - point0.z) / horizontalSegments;
+            // Calculate the change in angle between one intermediate point and the other
             const delta_theta = Math.PI / horizontalSegments;
+            // Calculate the midpoint between both keypoints
             const y_mid = (point0.y + point1.y) / 2;
+            // Calculate the amplitude between the midpoint of both keypoints and the first 
+            // keypoint
             const amplitude = (point0.y - point1.y) / 2;
 
+            // Using the values calculated above, set the intermediate point y and z 
+            // components, which describe a cosine curve between both keypoints
             for (let j = 0; j < horizontalSegments + 1; j++) {
-                const intermediate_point = new THREE.Vector3();
+                const intermediate_point = new Vector3();
                 intermediate_point.z = point0.z + j * delta_z;
                 intermediate_point.y = y_mid + amplitude * Math.cos(j * delta_theta);
                 curvePoints.push(intermediate_point);
-
             }
         }
 
         // [DEBUG] Show curved line made from joining keypoints with cosine curve
-        // const curvedLine = new THREE.Line(
-        //     new THREE.BufferGeometry().setFromPoints(curvePoints),
-        //     new THREE.LineBasicMaterial({ color: 0xFFFFFFF })
+        // const curvedLine = new Line(
+        //     new BufferGeometry().setFromPoints(curvePoints),
+        //     new LineBasicMaterial({ color: 0xFFFFFFF })
         // );
         // curvedLine.rotateY(Math.PI / 2);
 
+        // Calculate the terrain length and save it
         this.#terrainLength = curvePoints[curvePoints.length - 1].z - curvePoints[0].z;;
 
-        const planeMesh = new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(this.terrainWidth, this.#terrainLength, 1, this.#terrainLength * 0.05),
-            new THREE.MeshStandardMaterial({ map, side: THREE.DoubleSide }),
-            // new THREE.MeshStandardMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide, wireframe: false })
+        // Create the terrain's mesh
+        const planeMesh = new Mesh(
+            new PlaneBufferGeometry(this.terrainWidth, this.#terrainLength, 1, this.#terrainLength * 0.05),
+            new MeshPhongMaterial({ map, side: DoubleSide }),
+            // new MeshStandardMaterial({ color: 0xFFFFFF, side: DoubleSide, wireframe: false })
         );
 
+        // Update the terrain mesh's vertices according to the calculated curved points 
+        // between each generated keypoint
         const planeVertices = planeMesh.geometry.getAttribute('position').count;
         const firstVertexY = planeMesh.geometry.getAttribute('position').getY(0);
         for (let i = 0; i < planeVertices; i++ ) {
@@ -260,6 +334,7 @@ export default class TerrainGenerator {
             // instead z values in calcualted verts
             const y = planeMesh.geometry.getAttribute('position').getY(i);
 
+            // Find a curve point value that matches the plane vertex' value +-6 units
             const curveValue = curvePoints.find(({ z }) => {
                 const zFloor = z;
                 const yFloor = y + firstVertexY;
@@ -267,18 +342,22 @@ export default class TerrainGenerator {
                 return zFloor === yFloor || (yFloor - 6 < zFloor && zFloor < yFloor + 6) 
             });
             
+            // Update the plane's vertex to match the calculated curvepoint
             planeMesh.geometry.getAttribute('position').setZ(i, curveValue.y)
         }
+        // Re-compute the plane's vertex normals, so shading works properly
         planeMesh.geometry.computeVertexNormals();
 
+        // Create a CANNON body for the plane, and rotate it appropriately
         const planeShape = this.#createTrimesh(planeMesh.geometry);
-        const planeBody = new CANNON.Body({
-            type: CANNON.Body.STATIC,
+        const planeBody = new Body({
+            type: Body.STATIC,
             material: this.#material
         });
         planeBody.addShape(planeShape);
         planeBody.quaternion.setFromEuler(Math.PI / 2, 0, 0);
 
+        // Return the generated terrain (island) start
         const island = { mesh: planeMesh, body: planeBody };
         return island;
     };
@@ -293,7 +372,7 @@ export default class TerrainGenerator {
         // Create the ending of the island
         const endPlaneMesh = new Mesh(
             new PlaneBufferGeometry(this.terrainWidth, 1000, 1, 25),
-            new MeshStandardMaterial({ map, side: DoubleSide })
+            new MeshPhongMaterial({ map, side: DoubleSide })
             // [DEBUG] Show endPlane as a blue wireframe.
             // new MeshBasicMaterial({ color:0x0000FF, wireframe: true })
         );
@@ -314,6 +393,7 @@ export default class TerrainGenerator {
 
     /**
      * Calculates where the island ending should start.
+     * @private
      * @param {Mesh} islandStart - Island start mesh.
      * @param {Mesh} islandEnd - Island end mesh.
      * @returns {Vector3} A vector containing the island's ending start coordinates.
@@ -339,37 +419,53 @@ export default class TerrainGenerator {
         return new Vector3(islandEndStart.x, islandEndStart.y, zDifference);
     };
 
+    /**
+     * Randomly generates terrain asset objects on terrain.
+     * @private
+     * @param {Group} terrainAssetGroup - Group that holds the terrain's asset objects
+     * @param {Number} amount - Ammount of asset objects to generate
+     */
     #generateTerrainAssets(terrainAssetGroup, amount) {
+        // Select random terrain asset models
         const randIdxs = Array(amount).fill().map(_ => Math.round(Math.random() * (this.terrainModels.length - 1)));
         const randAssets = randIdxs.map(index => this.terrainModels[index].clone());
 
+        // Get the ending start plane index for the island
         const islandEndIndex = this.#mesh.geometry.getAttribute('position').count - 1;
 
+        // Generate terrain asset objects
         randAssets.forEach(asset => {
             // Get a random vertex index from vertex array in range [2, ..., n - 3]
             // (so it doesn't get neither the first or last index)
             const randomVertexIdx = Math.round(Math.random() * (islandEndIndex - 2)) + 2;
     
+            // Generate random x, y, and z values for the terrain asset object's position, 
+            // and make the terrain asset object generate in the terrain's ground.
+            // Note: As this is in local space, -y represents horizontal (forward) position, 
+            // and +z represents vertical (upward) position
             const randomX = Math.random() * this.terrainWidth - this.terrainWidth / 2;
             const randomY = this.#mesh.geometry.getAttribute('position').getY(randomVertexIdx);
             const randomZ = this.#mesh.geometry.getAttribute('position').getZ(randomVertexIdx);
 
-            // Approximate angle of rotation numerically
+            // Approximate angle of rotation for the terrain asset object numerically
             const prevIdx = randomVertexIdx - 2;
             const nextIdx = randomVertexIdx + 2;
-            const prevVertex = new THREE.Vector3(0, this.#mesh.geometry.getAttribute('position').getY(prevIdx), this.#mesh.geometry.getAttribute('position').getZ(prevIdx));
-            const nextVertex = new THREE.Vector3(0, this.#mesh.geometry.getAttribute('position').getY(nextIdx), this.#mesh.geometry.getAttribute('position').getZ(nextIdx));
+            const prevVertex = new Vector3(0, this.#mesh.geometry.getAttribute('position').getY(prevIdx), this.#mesh.geometry.getAttribute('position').getZ(prevIdx));
+            const nextVertex = new Vector3(0, this.#mesh.geometry.getAttribute('position').getY(nextIdx), this.#mesh.geometry.getAttribute('position').getZ(nextIdx));
 
             const prevToCurrentSlope = (prevVertex.y - randomY) / (prevVertex.z - randomZ);
             const currentToNextSlope = (randomY - nextVertex.y) / (randomZ - nextVertex.z);
             const averageSlope = (prevToCurrentSlope + currentToNextSlope) / 2;
             const normalSlope = -1 / averageSlope;
-            const normal = new THREE.Vector3(0, normalSlope * 1, 1).normalize();
+            const normal = new Vector3(0, normalSlope * 1, 1).normalize();
 
-            const worldUp = new THREE.Vector3(0, 0, 1);
+            const worldUp = new Vector3(0, 0, 1);
             const angle = Math.sign(averageSlope) * Math.acos(worldUp.dot(normal));
 
+            // Setup and add terrain asset object to terrain's asset object group
             asset.name = 'Asset';
+            // Set the terrain asset object's z component to the generated value minus 5, 
+            // so that the model floats a small amount above the terrain
             asset.position.set(randomX, randomY, randomZ - 5);
             // Convert Blender axes into ThreeJs axes and rotate according to terrain
             asset.rotateX(-Math.PI / 2 + angle);
@@ -378,24 +474,38 @@ export default class TerrainGenerator {
         });
     };
 
-    #clamp(number, min, max) {
-        return Math.min(Math.max(number, min), max);
-    };
-
+    /**
+     * Randomly generates clouds on terrain.
+     * @param {Group} cloudGroup - Group that holds the terrain's cloud objects
+     * @param {Number} amount - Ammount of cloud objects to generate
+     */
     #generateClouds(cloudGroup, amount) {
+        // Get the ending start plane index for the island
         const islandEndIndex = this.#mesh.geometry.getAttribute('position').count - 1;
 
+        // Generate cloud objects
         Array(amount).fill().forEach((_, idx) => {
+            // Select a random cloud object model
             const cloud = this.clouds[Math.round(Math.random() * (this.clouds.length - 1))].clone();
             
+            // Select a random vertex index from the start plane
             const randomVertexIdx = Math.round(Math.random() * (islandEndIndex));
 
+            // Clamp the spawn height of cloud object to create, so as player progresses, 
+            // cloud objects will generate closer to the terrain, up to a certian point
             const cloudHeight = this.#clamp(700 - 20 * this.#islandNumber, 500, 700);
+            // Clamp the spawn height spread of cloud object to create, so as player progresses, 
+            // cloud objects will generate with a larger spread in height, up to a certian point
             const cloudSpread = this.#clamp(200 + 20 * this.#islandNumber, 200, 400);
+
+            // Generate random x, y, and z values for the cloud object's position
+            // Note: As this is in local space, -y represents horizontal (forward) position, 
+            // and +z represents vertical (upward) position
             const x = Math.round(Math.random() * this.terrainWidth) - this.terrainWidth / 2;
             const y = this.#mesh.geometry.getAttribute('position').getY(randomVertexIdx);
             const z = this.#mesh.geometry.getAttribute('position').getZ(randomVertexIdx) - (Math.random() * cloudSpread + cloudHeight);
 
+            // Setup and add cloud object to terrain's cloud object group
             cloud.name = `Cloud ${idx}`;
             cloud.position.set(x, y, z);
             cloud.scale.set(0.2, 0.2, 0.2);

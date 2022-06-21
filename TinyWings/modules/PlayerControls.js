@@ -2,19 +2,15 @@
  * Player Controls class which handles player movement.
  * 
  * @module PlayerControls
- * @file Player controls module for Tiny Wings 3D (ThreeJs)
+ * @file Player controls module for Cuchi Tales
  * @author Emilio Popovits Blake
  */
 
 "use strict";
 
-// Import ThreeJs
+// Import third-party libraries
 import { Mesh, Vector3, Quaternion} from '../../libs/three.js/three.module.js';
-// import * as THREE from '../../libs/three.js/three.module.js';
-
-// Import cannon-es
 import { Body } from '../../libs/cannon-es.js/cannon-es.js';
-// import * as CANNON from '../../libs/cannon-es.js/cannon-es.js';
 
 // Enums for capture keys
 const [W, A, D, ENTER, SPACE] = ['w', 'a', 'd', 'enter', ' '];
@@ -42,14 +38,6 @@ export default class PlayerControls {
      * { 'enter': false, 'a': true, 'space': false, ... }
      */
     #keysPressed = {};
-
-    /**
-     * Flag to know if to start player movement.
-     * @private
-     * @type {Boolean}
-     * @default false
-     */
-    #startGame = false;
 
     /**
      * Constructs a Player Controls object.

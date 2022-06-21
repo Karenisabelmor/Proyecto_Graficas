@@ -1,14 +1,34 @@
+/**
+ * Main script that runs Cuchi Tails.
+ * 
+ * @module BaseScene
+ * @file Main script that runs Cuchi Tales
+ * @author Emilio Popovits Blake
+ * @author Ana Paola Minchaca Garcia
+ * @author Karen Isabel Morgado
+ */
+
 "use strict";
 
-import * as THREE from '../libs/three.js/three.module.js';
-import * as CANNON from '../libs/cannon-es.js/cannon-es.js';
-import CannonDebugger from '../libs/cannon-es-debugger/cannon-es-debugger.js';
+// Import third-party libraries
+import {
+    Scene, PerspectiveCamera, WebGLRenderer, Color, PCFShadowMap, 
+    DirectionalLight, HemisphereLight, Object3D, Group, Vector3, 
+    Clock,
+    Mesh
+} from '../libs/three.js/three.module.js';
 import { OrbitControls } from '../libs/three.js/controls/OrbitControls.js';
-import TerrainGenerator from './modules/TerrainGenerator.js';
+import { 
+    Body, Sphere, Material, World
+} from '../libs/cannon-es.js/cannon-es.js';
+import CannonDebugger from '../libs/cannon-es-debugger/cannon-es-debugger.js';
+
+// Import modules
+import * as Loaders from './modules/Loaders.js';
 import PlayerControls from './modules/PlayerControls.js';
 import ThirdPersonCamera from './modules/ThirdPersonCamera.js';
+import TerrainGenerator from './modules/TerrainGenerator.js';
 import GameManager from './modules/GameManager.js';
-import * as Loaders from './modules/Loaders.js';
 
 /**
  * Sets up ThreeJs environment.
@@ -25,7 +45,7 @@ function setupThreeJs() {
     canvas.height = window.innerHeight;
 
     // Setup Renderer
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    const renderer = new WebGLRenderer({ canvas, antialias: true });
 
     // Set renderer pixel ratio as device's pixel ratio and renderer's viewport size
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -33,15 +53,15 @@ function setupThreeJs() {
 
     // Enable shadows
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.shadowMap.type = PCFShadowMap;
     
     // Setup Scene
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color( 'skyblue' );
+    const scene = new Scene();
+    scene.background = new Color( 'skyblue' );
 
     // Setup Perspective Camera
-    // const camera = new THREE.PerspectiveCamera(45, canvas.width / canvas.height, 1, 4000);
-    const camera = new THREE.PerspectiveCamera(45, canvas.width / canvas.height, 1, 10000);
+    // const camera = new PerspectiveCamera(45, canvas.width / canvas.height, 1, 4000);
+    const camera = new PerspectiveCamera(45, canvas.width / canvas.height, 1, 10000);
     camera.position.set(0, 220, 1500);
 
     // Orbit controls
@@ -51,20 +71,31 @@ function setupThreeJs() {
     return { renderer, scene, camera, orbitControls };
 };
 
-async function setupScene() {
-    // Lights
-
+/**
+ * Sets up ThreeJs scene lights.
+ * @returns {{ directionalLight: DirectionalLight, hemisphereLight: HemisphereLight }} Returns 
+ * a directional light and a hemisphere light, already positioned and set up for the scene.
+ */
+function setupLights() {
     // Directional light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const directionalLight = new DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(500, 500, -500);
     directionalLight.target.position.set(0, 0, 0);
     directionalLight.castShadow = true;
 
     // Hemisphere light
-    const hemisphereLight = new THREE.HemisphereLight(0xaaaaaa, 0x000000, 0.9);
+    const hemisphereLight = new HemisphereLight(0xaaaaaa, 0x000000, 0.9);
 
-    // Models
+    return { directionalLight, hemisphereLight };
+};
 
+/**
+ * Loads models and sets them up for usage.
+ * @async
+ * @returns {{ player: { mesh: Mesh, body: Body }, apple: Group, cloud: Group, enemy: Group, powerups: Group, terrainModels: Group }} 
+ * Returns player, apple, cloud, powerup, and terrain models. Player comes with CANNON body.
+ */
+async function setupModels() {
     // Apple model data
     const appleModelUrls = {
         obj:'./models/apple/Apple.obj', 
@@ -109,43 +140,53 @@ async function setupScene() {
         Loaders.loadFBX('./models/hill_assets/tree2.fbx'),
     ]);
 
-    const playerBody = new CANNON.Body({
+    // Setup player CANNON body
+    const playerBody = new Body({
         mass: 1,
-        shape: new CANNON.Sphere(14),
-        material: new CANNON.Material('playerMaterial')
+        shape: new Sphere(14),
+        material: new Material('playerMaterial')
     });
-    // playerBody.fixedRotation = false;
-    // playerBody.updateMassProperties();
 
-    const playerMesh = new THREE.Object3D();
+    // Create an object wrapper for the player's mesh, so 
+    // player's mesh can be positioned and moved properly
+    const playerMesh = new Object3D();
     playerModel.rotateY(Math.PI);
     playerMesh.add(playerModel);
 
     const player = { mesh: playerMesh, body: playerBody };
 
+    // Rotate apple and enemy models so their +y is up
     apple.rotateX(-Math.PI / 2);
     enemy.rotateX(-Math.PI / 2);
 
+    // Name the powerups for easy access
     const powerups = [powerup0, powerup1, powerup2];
     powerups[0].name = 'Pink';
     powerups[1].name = 'Blue';
     powerups[2].name = 'Green';
     
-    return { directionalLight, hemisphereLight, player, apple, cloud, enemy, powerups, terrainModels };
+    // Return the player, apple, cloud, enemy, powerups, and terrain models
+    return { player, apple, cloud, enemy, powerups, terrainModels };
 };
 
+/** 
+ * Main function.
+ * @async
+ */
 async function main() {
+    // Setup ThreeJs, lights, and models
     const { renderer, scene, camera, orbitControls } = setupThreeJs();
+    const { directionalLight, hemisphereLight } = setupLights();
 
     const { 
-        directionalLight, hemisphereLight, player,
-        apple, cloud, enemy, powerups, terrainModels
-    } = await setupScene();
+        player, apple, cloud, enemy, powerups, terrainModels
+    } = await setupModels();
+
+    // Add lights to scene
     scene.add(directionalLight, hemisphereLight);
 
     // Initialize CANNON world
-    const world = new CANNON.World();
-    // world.gravity.set(0, -98.1, 0);
+    const world = new World();
     world.gravity.set(0, -98.1, 0);
 
     // Transform player
@@ -159,7 +200,7 @@ async function main() {
     world.addBody(player.body);
 
     // Create island group for collision test
-    const islands = new THREE.Group();
+    const islands = new Group();
     islands.name = 'Islands';
     scene.add(islands);
 
@@ -167,7 +208,7 @@ async function main() {
     const playerControls = new PlayerControls(player);
     
     // Instantiate ThirdPersonCamera
-    const [idealOffset, idealLookat] = [new THREE.Vector3(200, 100, 300), new THREE.Vector3(50, -20, -200)];
+    const [idealOffset, idealLookat] = [new Vector3(200, 100, 300), new Vector3(50, -20, -200)];
     const thirdPersonCamera = new ThirdPersonCamera(camera, playerControls, islands, idealOffset, idealLookat);
 
     // Instantiate TerrainGenerator
@@ -175,32 +216,38 @@ async function main() {
     const terrainGenerator = new TerrainGenerator(islandTextures, [cloud], terrainModels, 1000);
 
     // Instantiate GameManager
-    const gameManagerSettings = {
-        cloudObjects: 50,
-        terrainObjects: 40,
-        enemyObjects: 10,
-        scoreObjects: 25,
-        powerupObjects: 6,
-    };
-    const gameManager = new GameManager(player, terrainGenerator, [enemy], [apple], powerups, gameManagerSettings);
+    const gameManager = new GameManager(player, terrainGenerator, [enemy], [apple], powerups);
    
-
+    // Instantiate cannon debugger, which shows cannon meshes
     const cannonDebugger = new CannonDebugger(scene, world, { color: 0x00FF00, scale: 1.0 });
-    const clock = new THREE.Clock();
+
+    const clock = new Clock();
     function animate() {
+        // Get deltaTime from ThreeJs
         let deltaTime = clock.getDelta();
 
+        // Call fixedStep from CANNON world, which is done to 
+        // calculate the physics with a fixed time step (not 
+        // deltaTime)
         world.fixedStep();
 
+        // Call the gameManager update function
         gameManager.update();
 
+        // If the game's over, end animate function here.
         if (gameManager.gameOver) return;
 
+        // Call playerControls and thirdPersonCamera update 
+        // functions
         playerControls.update();
         thirdPersonCamera.update(deltaTime);
+        
+        // [DEBUG] Un-comment for debugging
         // cannonDebugger.update();
         // orbitControls.update();
 
+        // Every frame, copy the player's CANNON body position and rotation 
+        // into its ThreeJs mesh so mesh follows cannon body
         player.mesh.position.copy(player.body.position);
         player.mesh.quaternion.copy(player.body.quaternion);
 
@@ -209,6 +256,7 @@ async function main() {
     };
     animate();
 
+    // Resize function so canvas resizes on window resize
     function resize() {
         const canvas = document.getElementById("webglcanvas");
     
